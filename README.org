@@ -1,0 +1,300 @@
+#+TITLE: Emacs, the OS masquerading as an editor
+
+
+* Installation
+  :LOGBOOK:
+  CLOCK: [2018-09-23 Sun 15:45]--[2018-09-23 Sun 16:10] =>  0:25
+  :END:
+
+First thing first, we want to grab our own .emacs.d and use that.
+
+#+BEGIN_SRC shell
+cd ;
+_emacs_d=$(mktemp -d)
+mv ~/.emacs.d $_emacs_d
+git clone git@github.com:drewc/.emacs.d.git
+#+END_SRC
+
+* Packages 
+
+We love packages! 
+
+#+NAME: package-initialize
+#+BEGIN_SRC emacs-lisp
+  (require 'package)
+  (setq package-archives
+	'(("melpa" . "http://melpa.org/packages/")
+	  ("gnu" . "http://elpa.gnu.org/packages/")
+	  ("org" . "https://orgmode.org/elpa/")))
+
+  ;; add melpa stable
+  (add-to-list 'package-archives
+	   '("melpa-stable" . "https://stable.melpa.org/packages/"))
+
+  ;; Not needed? (package-initialize)
+
+  ;; Make sure we load all packages
+  (setq package-load-list '(all))
+#+END_SRC
+
+** Use Package
+There is a ~use-package~ that's like *quicklisp* on *ASDF*'roids.
+
+ - Local :: [[file:use-package.org][Use Package!]]
+
+ - https://github.com/jwiegley/use-package
+
+#+NAME: use-package
+#+BEGIN_SRC emacs-lisp
+  (eval-when-compile
+    (add-to-list 'load-path "~/.emacs.d/use-package")
+    (require 'use-package))
+
+    ;; Make sure we install all packages.
+  (setq use-package-always-ensure t)
+#+END_SRC
+
+** Auto Package Update
+
+ Yikes! I know this is silly, but with git and old versions kept, it
+ might be a good silly.
+
+ See https://github.com/rranelli/auto-package-update.el
+
+ #+NAME: autoupdate
+ #+BEGIN_SRC emacs-lisp
+   (use-package auto-package-update
+     :config
+     (setq auto-package-update-delete-old-versions nil)
+     (setq auto-package-update-hide-results nil)
+     (auto-package-update-maybe))
+ #+END_SRC
+#
+* Spacemacs
+
+Why not! I only got into emacs because of being a Lisp
+developer. There are many things about it that do not quite agree with
+my tastes, and [[http://spacemacs.org/][Spacemacs]] seems right up my alley.
+ 
+** Add the repo as a remote subtree
+
+#+BEGIN_SRC emacs-lisp
+  (let ((_ (first (process-lines "pwd")))
+        (remote (progn (cd "~/.emacs.d")
+                       (= 0 (call-process-shell-command "git remote show spacemacs")))))
+
+    (unless remote
+      (unless (= 0 (call-process-shell-command
+                    "git remote add spacemacs git@github.com:syl20bnr/spacemacs.git"))
+        (error "FAILED! git remote add spacemacs git@github.com:syl20bnr/spacemacs.git"))
+      (unless (= 0 (call-process-shell-command "git fetch spacemacs"))
+        (error "Failed! git fetch spacemacs"))
+      (unless (= 0 (call-process-shell-command  "git subtree add --prefix=spacemacs --squash spacemacs master"))
+        (error "Failed! git subtree add --prefix=spacemacs --squash spacemacs master"))
+      (message "Added Spacemacs remote"))
+
+    (when remote
+      (message (shell-command-to-string "git subtree pull --prefix=spacemacs --squash spacemacs master")))
+     (cd _)
+     (message "Spacemacs Finished"))
+
+
+
+
+
+
+#+END_SRC
+#+BEGIN_SRC shell
+git remote add spacemacs git@github.com:syl20bnr/spacemacs.git
+git fetch spacemacs
+git subtree add \
+  --prefix=spacemacs --squash spacemacs master
+#+END_SRC 
+
+** Use our own ~.spacemacs~ link
+
+The =~.spacemacs= is a symlink to our own =dotspacemacs=.
+
+#+BEGIN_SRC emacs-lisp
+  (let ((ln "~/.spacemacs")
+        (fn "~/.emacs.d/dotspacemacs"))
+    (when (file-exists-p ln)
+      (unless (file-symlink-p ln)
+        (warn "Moving %s to %s.orig" ln ln)
+        (rename-file ln (concat ln ".orig"))))
+    (unless (file-symlink-p ln)
+      (make-symbolic-link fn ln)))
+
+#+END_SRC
+** Modify ~spacemacs-start-directory~ variable and load.
+
+
+#+NAME: spacemacs
+#+BEGIN_SRC emacs-lisp 
+  ;; This solution is better suited to "embed" Spacemacs into your own
+  ;; configuration. Say you cloned Spacemacs in ~/.emacs.d/spacemacs/ then
+  ;; drop these lines in ~/.emacs.d/init.el:
+
+  (setq spacemacs-start-directory "~/.emacs.d/spacemacs/")
+  (load-file (concat spacemacs-start-directory "init.el"))
+#+END_SRC
+
+
+
+#+RESULTS:
+| origin    | git@github.com:drewc/.emacs.d.git (fetch)     |
+| origin    | git@github.com:drewc/.emacs.d.git (push)      |
+| spacemacs | git@github.com:syl20bnr/spacemacs.git (fetch) |
+| spacemacs | git@github.com:syl20bnr/spacemacs.git (push)  |
+
+
+* Org Mode
+
+This is a ~.org~ file somewhere.
+
+#+NAME: org-mode
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :ensure org-plus-contrib
+    :config
+    (setf org-support-shift-select t)
+    (require 'org-notmuch)
+    (require 'ob-sql)
+    (require 'ob-shell))
+#+END_SRC
+
+* Magit 
+
+This ~.org~ file is stored in git. I use git all the time.
+
+For some reason, the current MELPA will not run, so we pin to stable
+for now.
+
+#+NAME: magit
+#+BEGIN_SRC emacs-lisp
+  (use-package magit :ensure t :pin melpa-stable)
+#+END_SRC
+
+* Helm
+
+"Helm is an Emacs framework for incremental completions and narrowing
+selections. It helps to rapidly complete file names, buffer names, or
+any other Emacs interactions requiring selecting an item from a list
+of possible choices." --https://emacs-helm.github.io/helm/
+
+#+NAME:helm
+#+BEGIN_SRC emacs-lisp
+  (use-package helm
+    :bind (("C-x b" . helm-mini)
+	   ([remap execute-extended-command]. helm-M-x)
+	   ([remap find-file] . helm-find-files)
+	   ([remap list-buffers] . helm-buffers-list))
+    :config
+    (define-key lisp-interaction-mode-map
+      [remap completion-at-point] 'helm-lisp-completion-at-point)
+    (define-key emacs-lisp-mode-map
+      [remap completion-at-point] 'helm-lisp-completion-at-point))
+
+#+END_SRC
+
+* Company
+
+Autocomplete dropdown thingie.
+
+#+NAME: company
+#+BEGIN_SRC emacs-lisp
+  (use-package company
+    :ensure t
+  ;  :config (global-company-mode)
+)
+#+END_SRC
+
+* Notmuch
+
+Notmuch is a great email thingie. The emacs client is quite good!
+
+#+NAME: notmuch
+#+BEGIN_SRC emacs-lisp
+  (use-package notmuch)
+#+END_SRC
+
+* Development
+** Gerbil 
+
+#+NAME:gerbil
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/gerbil")
+  (require 'gerbil)
+  (add-hook 'gerbil-mode-hook 'slime-mode)
+#+END_SRC
+
+** Slime 
+
+ #+NAME:slime
+ #+BEGIN_SRC emacs-lisp
+   (use-package slime
+     :ensure  t 
+     :config (setq inferior-lisp-program "sbcl")
+       (setq slime-contribs '(slime-repl)))
+ #+END_SRC
+
+** Markdown
+
+ #+NAME:markdown
+ #+BEGIN_SRC emacs-lisp
+   (use-package markdown-mode)
+ #+END_SRC
+
+* Desktop :: Saving Emacs Sessions
+  :PROPERTIES:
+  :CUSTOM_ID: foo
+  :END:
+  
+"Once you save the Emacs desktop—the buffers, their file names, major
+modes, buffer positions, and so on—then subsequent Emacs sessions
+reload the saved desktop." --[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Saving-Emacs-Sessions.html][Saving Emacs Sessions]]
+
+#+NAME: desktop-save-mode
+#+BEGIN_SRC emacs-lisp
+  (desktop-save-mode 1)
+#+END_SRC
+
+
+* ~init.el~ 
+
+#+BEGIN_SRC emacs-lisp :noweb yes :tangle "init.el"
+  <<desktop-save-mode>>
+
+  <<package-initialize>>
+
+  <<spacemacs>>
+
+  <<notmuch>>
+
+  <<slime>>
+
+  <<gerbil>>
+
+  <<org-mode>>
+
+  ;; spacemacs does this sort of thing
+  ;; 
+
+  ;; 
+
+   ;; <<use-package>>  
+
+   ;; <<autoupdate>>
+
+   ;; spacemacs
+   ;; <<magit>>
+
+   ;; <<helm>>
+
+
+#+END_SRC
+
+
+
+
+
