@@ -1,8 +1,49 @@
 #+TITLE: Emacs, the OS masquerading as an editor
-https://github.com/radian-software/straight.el
+#+PROPERTY: header-args :tangle ./init.el
 
-#+begin_src emacs-lisp :tangle "./init.el"
-  ;; Straight bootstrap
+I use Emacs as it's consistent cross-platform and almost a software
+lisp machine. This is making my personal experience most excellent.
+
+* Contents
+:PROPERTIES:
+:TOC:      :include siblings :depth 3
+:CUSTOM_ID: contents
+:END:
+:CONTENTS:
+- [[#contents][Contents]]
+- [[#the-early-init][The Early Init]]
+- [[#straightel-next-generation-purely-functional-package-manager][straight.el: next-generation, purely functional package manager...]]
+- [[#mac-darwin-and-the-commandmeta-key][Mac (Darwin) and the command/meta key]]
+- [[#org-mode][Org Mode]]
+  - [[#org-make-toc-for-github-compatible-tocs][org-make-toc for Github compatible TOC's]]
+    - [[#usage][Usage]]
+- [[#desktop--saving-emacs-sessions][Desktop :: Saving Emacs Sessions]]
+- [[#evil-vi-bindings-in-emacs][Evil: VI bindings in Emacs]]
+:END:
+
+
+* The Early Init
+:PROPERTIES:
+:CUSTOM_ID: the-early-init
+:END:
+
+Emacs has/had things that we want to configure BEFORE initialization, as it were.
+
+So for that we get the [[info:emacs#Early Init File][Early Init File]](info), AKA [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Early-Init-File.html][early-init.el]](html).
+
+#+begin_src emacs-lisp :tangle ./early-init.el :comments both
+  (setq package-enable-at-startup nil)
+#+end_src
+
+* straight.el: next-generation, purely functional package manager...
+:PROPERTIES:
+:CUSTOM_ID: straightel-next-generation-purely-functional-package-manager
+:END:
+
+... for the Emacs hacker! See [[https://github.com/radian-software/straight.el][their github]] for docs.
+
+#+begin_src emacs-lisp
+   ;; Straight bootstrap
   (defvar bootstrap-version)
   (let ((bootstrap-file
   	 (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -19,85 +60,203 @@ https://github.com/radian-software/straight.el
   ;; Set up use-package for tidier package configuration/installation
   (straight-use-package 'use-package)
   (setq straight-use-package-by-default t)
-  (straight-use-package 'org)
+  
+#+end_src
+
+We use =use-package= from =straight-use-package= in order to have
+[[https://github.com/jwiegley/use-package][use-package]] use =straight-use-package= by default.
 
 
-  (require 'ox-md)
+* Mac (Darwin) and the command/meta key
+:PROPERTIES:
+:CUSTOM_ID: mac-darwin-and-the-commandmeta-key
+:END:
+
+#+begin_src emacs-lisp
   (setq ns-command-modifier 'meta)
   (setq  mac-command-modifier 'meta)
+#+end_src
 
 
+* Org Mode
+:PROPERTIES:
+:CUSTOM_ID: org-mode
+:END:
+
+I love org mode!
+
+#+begin_src emacs-lisp
+  (straight-use-package 'org)
+  (require 'ox-md) (require 'org-indent)
+  (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((sql . t)
+       (shell .t )))
+
+
+#+end_src
+
+** =outli=, org for not org, outline but better
+
+https://github.com/jdtsmith/outli
+#+begin_src emacs-lisp
+  (use-package outli
+    :straight (outli :type git :host github :repo "jdtsmith/outli")
+    :bind (:map outli-mode-map ; convenience key to get back to containing heading
+  	      ("C-c C-p" . (lambda () (interactive) (outline-back-to-heading)))))
+#+end_src
+
+** =ox-gfm=: Github Flavored Markdown exporter for Org Mode
+
+#+begin_src emacs-lisp
+  (use-package ox-gfm)
+  (require 'ox-gfm)
+#+end_src
+
+** =org-make-toc= for Github compatible TOC's
+:PROPERTIES:
+:CUSTOM_ID: org-make-toc-for-github-compatible-tocs
+:END:
+
+ - Making links work in both Emacs/Org and on GitHub
+
+   Because of the way GitHub renders Org documents and links, it's not
+   possible to make links which work in both Org itself and the
+   GitHub-rendered HTML unless headings have ~CUSTOM_ID~ properties.
+   If the option ~org-make-toc-insert-custom-ids~ is enabled, this
+   package will automatically add them as needed.
+   
+
+
+#+begin_src emacs-lisp
+  (use-package org-make-toc
+    :config
+     (setq org-make-toc-insert-custom-ids t))
+#+end_src
+
+*** Usage
+:PROPERTIES:
+:CUSTOM_ID: usage
+:END:
+
+A document may have any number of tables of contents (TOCs), each of which may list entries in a highly configurable way.
+
+To make a basic TOC, follow these steps:
+
+1.  Choose a heading to contain a TOC and move the point to it.
+2.  Run command =org-make-toc-insert=, which inserts a =:CONTENTS:=
+   drawer and sets TOC properties.  Set the =include= property to
+   =all=.
+3.  Run the command =org-make-toc= to update all TOCs in the document.
+
+Use command =org-make-toc-set= to change TOC properties for the entry at point with completion.
+
+* Desktop :: Saving Emacs Sessions
+  :PROPERTIES:
+  :CUSTOM_ID: desktop--saving-emacs-sessions
+  :END:
+  
+"Once you save the Emacs desktop—the buffers, their file names, major
+modes, buffer positions, and so on—then subsequent Emacs sessions
+reload the saved desktop." --[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Saving-Emacs-Sessions.html][Saving Emacs Sessions]]
+
+#+NAME: desktop-save-mode
+#+BEGIN_SRC emacs-lisp
+  (desktop-save-mode 1)
+#+END_SRC
+
+
+* Evil: VI bindings in Emacs
+:PROPERTIES:
+:CUSTOM_ID: evil-vi-bindings-in-emacs
+:END:
+
+#+begin_src emacs-lisp
+  
   (use-package evil)
   (require 'evil)
   (evil-mode 1)
 
-  (progn
-    (defvar *gerbil-path*
-      (or (getenv "GERBIL_INSTALL_PREFIX")
-  	(shell-command-to-string "gxi -e '(display (path-expand \"~~\"))'\
+#+end_src
+
+* Syntax with =bnf-mode'
+
+#+begin_src emacs-lisp
+  (use-package bnf-mode)
+#+end_src
+* Rest
+#+begin_src emacs-lisp :tangle "./init.el"
+
+  (eval-and-compile
+    (setq *gerbil-path*
+  	(or (getenv "GERBIL_INSTALL_PREFIX")
+  	    (shell-command-to-string "gxi -e '(display (path-expand \"~~\"))'\
      -e '(flush-output-port)'")))
+    (setq font-lock-reference-face font-lock-constant-face)
+    (defun %gerbil-load-path ()
+       (expand-file-name "share/emacs/site-lisp/" *gerbil-path*)))
 
-    (use-package gerbil-mode
-      :when (file-directory-p *gerbil-path*)
-      :ensure nil
-      :straight nil
-      :defer t
-      :mode (("\\.ss\\'"  . gerbil-mode)
-             ("\\.pkg\\'" . gerbil-mode))
-      :bind (:map comint-mode-map
-  		(("C-S-n" . comint-next-input)
-  		 ("C-S-p" . comint-previous-input)
-  		 ("C-S-l" . clear-comint-buffer))
-  		:map gerbil-mode-map
-  		(("C-S-l" . clear-comint-buffer)))
-      :init
-      (autoload 'gerbil-mode
-        (expand-file-name "share/emacs/site-lisp/gerbil-mode.el" *gerbil-path*)
-        "Gerbil editing mode." t)
-      :hook
-      ((gerbil-mode-hook . linum-mode)
-       (inferior-scheme-mode-hook . gambit-inferior-mode)
-       (scheme-mode-hook . gerbil-mode))
+  (use-package gerbil-mode
+    :when (file-directory-p *gerbil-path*)
+    :load-path (lambda () (list (%gerbil-load-path)))
+    :ensure nil
+    :straight nil
+    ;;:demand t
+   ;; :defer t
+    :mode (("\\.ss\\'"  . gerbil-mode)
+           ("\\.pkg\\'" . gerbil-mode))
+    :bind (:map comint-mode-map
+  	      (("C-S-n" . comint-next-input)
+  	       ("C-S-p" . comint-previous-input)
+  	       ("C-S-l" . clear-comint-buffer))
+  	      :map gerbil-mode-map
+  	      (("C-S-l" . clear-comint-buffer)))
+    ;; :init
+    ;; (autoload 'gerbil-mode
+    ;;   (expand-file-name "share/emacs/site-lisp/gerbil-mode.el" *gerbil-path*)
+    ;;   "Gerbil editing mode." t)
+     :hook
+     ((gerbil-mode . display-line-numbers-mode)
+      (inferior-scheme-mode . gambit-inferior-mode)
+      (scheme-mode . gerbil-mode))
 
-      :config
-      (require 'gambit
-               (expand-file-name "share/emacs/site-lisp/gambit.el" *gerbil-path*))
-      (setf scheme-program-name (expand-file-name "bin/gxi" *gerbil-path*))
+    :config
+    (require 'gambit
+             (expand-file-name "share/emacs/site-lisp/gambit.el" *gerbil-path*))
+    (setf scheme-program-name (expand-file-name "bin/gxi -:te" *gerbil-path*))
 
-      (let ((tags (locate-dominating-file default-directory "TAGS")))
-        (when tags (visit-tags-table tags)))
-      (let ((tags (expand-file-name "src/TAGS" *gerbil-path*)))
-        (when (file-exists-p tags) (visit-tags-table tags)))
+    (let ((tags (locate-dominating-file default-directory "TAGS")))
+      (when tags (visit-tags-table tags)))
+    (let ((tags (expand-file-name "src/TAGS" *gerbil-path*)))
+      (when (file-exists-p tags) (visit-tags-table tags)))
 
-      (when (package-installed-p 'smartparens)
-        (sp-pair "'" nil :actions :rem)
-        (sp-pair "`" nil :actions :rem))
+    (when (package-installed-p 'smartparens)
+      (sp-pair "'" nil :actions :rem)
+      (sp-pair "`" nil :actions :rem))
 
-      (defun clear-comint-buffer ()
-        (interactive)
-        (with-current-buffer "*scheme*"
-  	(let ((comint-buffer-maximum-size 0))
-            (comint-truncate-buffer)))))
-
-    (defun gerbil-setup-buffers ()
-      "Change current buffer mode to gerbil-mode and start a REPL"
+    (defun clear-comint-buffer ()
       (interactive)
-      (gerbil-mode)
-      (split-window-right)
-      (shrink-window-horizontally 2)
-      (let ((buf (buffer-name)))
-        (other-window 1)
-        (run-scheme "gxi")
-        (switch-to-buffer-other-window "*scheme*" nil)
-        (switch-to-buffer buf)))
+      (with-current-buffer "*scheme*"
+        (let ((comint-buffer-maximum-size 0))
+          (comint-truncate-buffer))))
 
-    (global-set-key (kbd "C-c C-g") 'gerbil-setup-buffers))
+  )
+
+  (defun gerbil-setup-buffers ()
+    "Change current buffer mode to gerbil-mode and start a REPL"
+    (interactive)
+    (gerbil-mode)
+    (split-window-right)
+    (shrink-window-horizontally 2)
+    (let ((buf (buffer-name)))
+      (other-window 1)
+      (run-scheme "gxi")
+      (switch-to-buffer-other-window "*scheme*" nil)
+      (switch-to-buffer buf)))
+
+  ;; (global-set-key (kbd "C-c C-g") 'gerbil-setup-buffers)
 
 
-
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((sql . t)))
   (use-package markdown-mode
     :mode ("README\\.md\\'" . gfm-mode))
 
@@ -173,300 +332,4 @@ https://github.com/radian-software/straight.el
    ;; If there is more than one, they won't work right.
    '(default ((t (:family "Andale Mono" :foundry "nil" :slant normal :weight regular :height 180 :width normal)))))
 #+end_src
-* Installation
-  :LOGBOOK:
-  CLOCK: [2018-09-23 Sun 15:45]--[2018-09-23 Sun 16:10] =>  0:25
-  :END:
-
-First thing first, we want to grab our own .emacs.d and use that.
-
-#+BEGIN_SRC shell
-cd ;
-_emacs_d=$(mktemp -d)
-mv ~/.emacs.d $_emacs_d
-git clone git@github.com:drewc/.emacs.d.git
-#+END_SRC
-
-* Packages 
-
-We love packages! 
-
-#+NAME: package-initialize
-#+BEGIN_SRC emacs-lisp
-  (require 'package)
-  (setq package-archives
-	'(("melpa" . "http://melpa.org/packages/")
-	  ("gnu" . "http://elpa.gnu.org/packages/")
-	  ("org" . "https://orgmode.org/elpa/")))
-
-  ;; add melpa stable
-  (add-to-list 'package-archives
-	   '("melpa-stable" . "https://stable.melpa.org/packages/"))
-
-  ;; Not needed? (package-initialize)
-
-  ;; Make sure we load all packages
-  (setq package-load-list '(all))
-#+END_SRC
-
-** Use Package
-There is a ~use-package~ that's like *quicklisp* on *ASDF*'roids.
-
- - Local :: [[file:use-package.org][Use Package!]]
-
- - https://github.com/jwiegley/use-package
-
-#+NAME: use-package
-#+BEGIN_SRC emacs-lisp
-  (eval-when-compile
-    (add-to-list 'load-path "~/.emacs.d/use-package")
-    (require 'use-package))
-
-    ;; Make sure we install all packages.
-  (setq use-package-always-ensure t)
-#+END_SRC
-
-** Auto Package Update
-
- Yikes! I know this is silly, but with git and old versions kept, it
- might be a good silly.
-
- See https://github.com/rranelli/auto-package-update.el
-
- #+NAME: autoupdate
- #+BEGIN_SRC emacs-lisp
-   (use-package auto-package-update
-     :config
-     (setq auto-package-update-delete-old-versions nil)
-     (setq auto-package-update-hide-results nil)
-     (auto-package-update-maybe))
- #+END_SRC
-#
-* Spacemacs
-
-Why not! I only got into emacs because of being a Lisp
-developer. There are many things about it that do not quite agree with
-my tastes, and [[http://spacemacs.org/][Spacemacs]] seems right up my alley.
- 
-** Add the repo as a remote subtree
-
-#+BEGIN_SRC emacs-lisp
-  (let ((_ (first (process-lines "pwd")))
-        (remote (progn (cd "~/.emacs.d")
-                       (= 0 (call-process-shell-command "git remote show spacemacs")))))
-
-    (unless remote
-      (unless (= 0 (call-process-shell-command
-                    "git remote add spacemacs git@github.com:syl20bnr/spacemacs.git"))
-        (error "FAILED! git remote add spacemacs git@github.com:syl20bnr/spacemacs.git"))
-      (unless (= 0 (call-process-shell-command "git fetch spacemacs"))
-        (error "Failed! git fetch spacemacs"))
-      (unless (= 0 (call-process-shell-command  "git subtree add --prefix=spacemacs --squash spacemacs master"))
-        (error "Failed! git subtree add --prefix=spacemacs --squash spacemacs master"))
-      (message "Added Spacemacs remote"))
-
-    (when remote
-      (message (shell-command-to-string "git subtree pull --prefix=spacemacs --squash spacemacs master")))
-     (cd _)
-     (message "Spacemacs Finished"))
-
-
-
-
-
-
-#+END_SRC
-#+BEGIN_SRC shell
-git remote add spacemacs git@github.com:syl20bnr/spacemacs.git
-git fetch spacemacs
-git subtree add \
-  --prefix=spacemacs --squash spacemacs master
-#+END_SRC 
-
-** Use our own ~.spacemacs~ link
-
-The =~.spacemacs= is a symlink to our own =dotspacemacs=.
-
-#+BEGIN_SRC emacs-lisp
-  (let ((ln "~/.spacemacs")
-        (fn "~/.emacs.d/dotspacemacs"))
-    (when (file-exists-p ln)
-      (unless (file-symlink-p ln)
-        (warn "Moving %s to %s.orig" ln ln)
-        (rename-file ln (concat ln ".orig"))))
-    (unless (file-symlink-p ln)
-      (make-symbolic-link fn ln)))
-
-#+END_SRC
-** Modify ~spacemacs-start-directory~ variable and load.
-
-
-#+NAME: spacemacs
-#+BEGIN_SRC emacs-lisp 
-  ;; This solution is better suited to "embed" Spacemacs into your own
-  ;; configuration. Say you cloned Spacemacs in ~/.emacs.d/spacemacs/ then
-  ;; drop these lines in ~/.emacs.d/init.el:
-
-  (setq spacemacs-start-directory "~/.emacs.d/spacemacs/")
-  (load-file (concat spacemacs-start-directory "init.el"))
-#+END_SRC
-
-
-
-#+RESULTS:
-| origin    | git@github.com:drewc/.emacs.d.git (fetch)     |
-| origin    | git@github.com:drewc/.emacs.d.git (push)      |
-| spacemacs | git@github.com:syl20bnr/spacemacs.git (fetch) |
-| spacemacs | git@github.com:syl20bnr/spacemacs.git (push)  |
-
-
-* Org Mode
-
-This is a ~.org~ file somewhere.
-
-#+NAME: org-mode
-#+BEGIN_SRC emacs-lisp
-  (use-package org
-    :ensure org-plus-contrib
-    :config
-    (setf org-support-shift-select t)
-    (require 'org-notmuch)
-    (require 'ob-sql)
-    (require 'ob-shell))
-#+END_SRC
-
-* Magit 
-
-This ~.org~ file is stored in git. I use git all the time.
-
-For some reason, the current MELPA will not run, so we pin to stable
-for now.
-
-#+NAME: magit
-#+BEGIN_SRC emacs-lisp
-  (use-package magit :ensure t :pin melpa-stable)
-#+END_SRC
-
-* Helm
-
-"Helm is an Emacs framework for incremental completions and narrowing
-selections. It helps to rapidly complete file names, buffer names, or
-any other Emacs interactions requiring selecting an item from a list
-cof possible choices." --https://emacs-helm.github.io/helm/
-
-#+NAME:helm
-#+BEGIN_SRC emacs-lisp
-  (use-package helm
-    :bind (("C-x b" . helm-mini)
-	   ([remap execute-extended-command]. helm-M-x)
-	   ([remap find-file] . helm-find-files)
-	   ([remap list-buffers] . helm-buffers-list))
-    :config
-    (define-key lisp-interaction-mode-map
-      [remap completion-at-point] 'helm-lisp-completion-at-point)
-    (define-key emacs-lisp-mode-map
-      [remap completion-at-point] 'helm-lisp-completion-at-point))
-
-#+END_SRC
-
-* Company
-
-Autocomplete dropdown thingie.
-
-#+NAME: company
-#+BEGIN_SRC emacs-lisp
-  (use-package company
-    :ensure t
-  ;  :config (global-company-mode)
-)
-#+END_SRC
-
-* Notmuch
-
-Notmuch is a great email thingie. The emacs client is quite good!
-
-#+NAME: notmuch
-#+BEGIN_SRC emacs-lisp
-  (use-package notmuch)
-#+END_SRC
-
-* Development
-** Gerbil 
-
-#+NAME:gerbil
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'load-path "~/.emacs.d/gerbil")
-  (require 'gerbil)
-  (add-hook 'gerbil-mode-hook 'slime-mode)
-#+END_SRC
-
-** Slime 
-
- #+NAME:slime
- #+BEGIN_SRC emacs-lisp
-   (use-package slime
-     :ensure  t 
-     :config (setq inferior-lisp-program "sbcl")
-       (setq slime-contribs '(slime-repl)))
- #+END_SRC
-
-** Markdown
-
- #+NAME:markdown
- #+BEGIN_SRC emacs-lisp
-   (use-package markdown-mode)
- #+END_SRC
-
-* Desktop :: Saving Emacs Sessions
-  :PROPERTIES:
-  :CUSTOM_ID: foo
-  :END:
-  
-"Once you save the Emacs desktop—the buffers, their file names, major
-modes, buffer positions, and so on—then subsequent Emacs sessions
-reload the saved desktop." --[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Saving-Emacs-Sessions.html][Saving Emacs Sessions]]
-
-#+NAME: desktop-save-mode
-#+BEGIN_SRC emacs-lisp
-  (desktop-save-mode 1)
-#+END_SRC
-
-
-* ~init.el~ 
-
-#+BEGIN_SRC emacs-lisp :noweb yes :untangle "init.el"
-  <<desktop-save-mode>>
-
-  <<package-initialize>>
-
-  <<spacemacs>>
-
-  <<notmuch>>
-
-  <<slime>>
-
-  <<gerbil>>
-
-  <<org-mode>>
-
-  ;; spacemacs does this sort of thing
-  ;; 
-
-  ;; 
-
-   ;; <<use-package>>  
-
-   ;; <<autoupdate>>
-
-   ;; spacemacs
-   ;; <<magit>>
-
-   ;; <<helm>>
-
-
-#+END_SRC
-
-
-
-
 
