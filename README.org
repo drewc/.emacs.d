@@ -6,20 +6,52 @@ lisp machine. This is making my personal experience most excellent.
 
 * Contents
 :PROPERTIES:
-:TOC:      :include siblings :depth 3
+:TOC:      :include siblings :depth 3 :exclude this
 :CUSTOM_ID: contents
 :END:
 :CONTENTS:
 - [[#contents][Contents]]
+- [[#usage-aka-getting-started][Usage AKA Getting Started]]
+  - [[#ubuntu][Ubuntu]]
 - [[#the-early-init][The Early Init]]
 - [[#straightel-next-generation-purely-functional-package-manager][straight.el: next-generation, purely functional package manager...]]
 - [[#mac-darwin-and-the-commandmeta-key][Mac (Darwin) and the command/meta key]]
 - [[#org-mode][Org Mode]]
+  - [[#outli-org-for-not-org-outline-but-better][outli, org for not org, outline but better]]
+  - [[#ox-gfm-github-flavored-markdown-exporter-for-org-mode][ox-gfm: Github Flavored Markdown exporter for Org Mode]]
   - [[#org-make-toc-for-github-compatible-tocs][org-make-toc for Github compatible TOC's]]
     - [[#usage][Usage]]
 - [[#desktop--saving-emacs-sessions][Desktop :: Saving Emacs Sessions]]
 - [[#evil-vi-bindings-in-emacs][Evil: VI bindings in Emacs]]
+- [[#syntax-with-bnf-mode][Syntax with =bnf-mode']]
+- [[#rest][Rest]]
 :END:
+
+* Usage AKA Getting Started
+:PROPERTIES:
+:CUSTOM_ID: usage-aka-getting-started
+:END:
+
+I use Linux and Mac and emacs is my primary app.
+
+** Ubuntu
+:PROPERTIES:
+:CUSTOM_ID: ubuntu
+:END:
+
+#+begin_src sh :tangle no
+  sudo snap install emacs --candidate --classic
+  sudo apt install git cmake libtool-bin #libvterm
+  mv ~/.emacs.d /tmp
+  git clone git@github.com:drewc/.emacs.d.git ~/.emacs.d
+
+  # make X11 work inside old tmux sessions
+  eval $(tmux showenv -s | grep -E '^(SSH|DISPLAY)')
+  emacs
+#+end_src
+
+
+
 
 
 * The Early Init
@@ -96,7 +128,18 @@ I love org mode!
 
 #+end_src
 
+** =org-roam=
+
+=Org Roam= is such a wonderful thing that we have a directory here just for it!
+
+#+begin_src emacs-lisp
+  (let ((rd (expand-file-name "./roam/" (file-name-directory user-init-file))))
+    (dolist (f (directory-files rd t "\.el$")) (load f)))
+#+end_src
 ** =outli=, org for not org, outline but better
+:PROPERTIES:
+:CUSTOM_ID: outli-org-for-not-org-outline-but-better
+:END:
 
 https://github.com/jdtsmith/outli
 #+begin_src emacs-lisp
@@ -107,6 +150,9 @@ https://github.com/jdtsmith/outli
 #+end_src
 
 ** =ox-gfm=: Github Flavored Markdown exporter for Org Mode
+:PROPERTIES:
+:CUSTOM_ID: ox-gfm-github-flavored-markdown-exporter-for-org-mode
+:END:
 
 #+begin_src emacs-lisp
   (use-package ox-gfm)
@@ -180,11 +226,17 @@ reload the saved desktop." --[[https://www.gnu.org/software/emacs/manual/html_no
 #+end_src
 
 * Syntax with =bnf-mode'
+:PROPERTIES:
+:CUSTOM_ID: syntax-with-bnf-mode
+:END:
 
 #+begin_src emacs-lisp
   (use-package bnf-mode)
 #+end_src
 * Rest
+:PROPERTIES:
+:CUSTOM_ID: rest
+:END:
 #+begin_src emacs-lisp :tangle "./init.el"
 
   (eval-and-compile

@@ -26,6 +26,9 @@
    '((sql . t)
      (shell .t )))
 
+(let ((rd (expand-file-name "./roam/")))
+  (dolist (f (directory-files rd t "\.el$")) (load f)))
+
 (use-package outli
   :straight (outli :type git :host github :repo "jdtsmith/outli")
   :bind (:map outli-mode-map ; convenience key to get back to containing heading
@@ -183,7 +186,28 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
-'(tool-bar-mode nil))
+ '(safe-local-variable-values
+   '((eval setq-local org-roam-db-location
+	   (expand-file-name "org-roam.db" org-roam-directory))
+     (eval setq-local org-roam-directory
+	   (expand-file-name "./roam/"
+			     (locate-dominating-file default-directory ".dir-locals.el")))
+     (elisp-lint-indent-specs
+      (describe . 1)
+      (it . 1)
+      (thread-first . 0)
+      (cl-flet . 1)
+      (cl-flet* . 1)
+      (org-element-map . defun)
+      (org-roam-dolist-with-progress . 2)
+      (org-roam-with-temp-buffer . 1)
+      (org-with-point-at . 1)
+      (magit-insert-section . defun)
+      (magit-section-case . 0)
+      (org-roam-with-file . 2))
+     (elisp-lint-ignored-validators "byte-compile" "package-lint")
+     (org-src-preserve-indentation . t)))
+ '(tool-bar-mode nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
