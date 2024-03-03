@@ -24,9 +24,9 @@
 (org-babel-do-load-languages
    'org-babel-load-languages
    '((sql . t)
-     (shell .t )))
+     (shell . t)))
 
-(let ((rd (expand-file-name "./roam/")))
+(let ((rd (expand-file-name "./roam/" (file-name-directory user-init-file))))
   (dolist (f (directory-files rd t "\.el$")) (load f)))
 
 (use-package outli

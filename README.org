@@ -123,7 +123,7 @@ I love org mode!
   (org-babel-do-load-languages
      'org-babel-load-languages
      '((sql . t)
-       (shell .t )))
+       (shell . t)))
 
 
 #+end_src
